@@ -1,0 +1,43 @@
+services:
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - 6379:6379
+  proj:
+    restart: always
+    build:
+      context: ./proj
+    command:
+      - python3
+      - ./bot.py
+  worker:
+    restart: always
+    build:
+      context: ./proj
+    command:
+      - celery
+      - '-A'
+      - tasks
+      - worker
+      - '--loglevel=INFO'
+
+
+
+version: '3.7'
+services:
+  userscache:
+    image: redis:6.0-alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    network_mode: host
+  kadexbot:
+    image: python:3.9
+    build: .
+    volumes:
+      - .:/bot
+    command: python3 /bot/main.py
+    network_mode: host
